@@ -12,6 +12,7 @@
  */
 
 import { computed, ref } from 'vue'
+import DeviceCard from '@/components/DeviceCard.vue'
 import { devices as mockDevices, bookings as mockBookings, currentUser } from '@/mock'
 import {
   BOOKING_STATUS_TEXT,
@@ -143,25 +144,13 @@ const statusOptions: { label: string; value: DeviceStatus | '' }[] = [
       </div>
 
       <div class="grid">
-        <div
+        <DeviceCard
           v-for="d in filteredDevices"
           :key="d.id"
-          class="card"
-          :class="{ selected: d.id === selectedDeviceId }"
-          @click="selectDevice(d.id)"
-        >
-          <div class="card-head">
-            <span class="card-name">{{ d.name }}</span>
-            <span class="badge" :class="'s-' + d.status">{{ DEVICE_STATUS_TEXT[d.status] }}</span>
-          </div>
-          <div class="card-meta">
-            <span>{{ d.serialNo }}</span>
-            <span>{{ d.location }}</span>
-          </div>
-          <div class="card-meta">
-            <span>单次上限 {{ d.maxHoursPerDay }}h</span>
-          </div>
-        </div>
+          :device="d"
+          :selected="d.id === selectedDeviceId"
+          @select="selectDevice"
+        />
       </div>
     </section>
 
@@ -293,54 +282,11 @@ h3 {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
 }
-.card {
-  border: 1px solid #e5e6eb;
-  border-radius: 8px;
-  padding: 14px;
-  cursor: pointer;
-  background: #fff;
-  transition: border-color 0.15s;
-}
-.card:hover {
-  border-color: #94bfff;
-}
-.card.selected {
-  border-color: #1664ff;
-  box-shadow: 0 0 0 2px rgba(22, 100, 255, 0.1);
-}
-.card-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.card-name {
-  font-weight: 600;
-  font-size: 15px;
-}
-.card-meta {
-  display: flex;
-  gap: 10px;
-  font-size: 12px;
-  color: #86909c;
-  margin-top: 6px;
-}
 .badge {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
   white-space: nowrap;
-}
-.s-idle {
-  background: #e8ffea;
-  color: #00b42a;
-}
-.s-in_use {
-  background: #e8f3ff;
-  color: #1664ff;
-}
-.s-maintenance {
-  background: #fff3e8;
-  color: #ff7d00;
 }
 .tag-success {
   background: #e8ffea;
