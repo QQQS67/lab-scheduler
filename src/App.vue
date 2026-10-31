@@ -13,15 +13,11 @@
 
 import { computed, ref } from 'vue'
 import DeviceCard from '@/components/DeviceCard.vue'
+import BookingItem from '@/components/BookingItem.vue'
 import { devices as mockDevices, bookings as mockBookings, currentUser } from '@/mock'
-import {
-  BOOKING_STATUS_TEXT,
-  BOOKING_STATUS_TAG,
-  DEVICE_STATUS_TEXT,
-  ROLE_TEXT,
-} from '@/types'
+import { DEVICE_STATUS_TEXT, ROLE_TEXT } from '@/types'
 import type { Booking, Device, DeviceStatus, TimeRange } from '@/types'
-import { findConflicts, validateTimeRange } from '@/utils/booking'
+import { findConflicts, formatRange, getTransitionError, validateTimeRange } from '@/utils/booking'
 
 // ============ ② ref()：声明响应式数据，改它页面自动刷新 ============
 
@@ -102,11 +98,18 @@ function setFilter(status: DeviceStatus | '') {
   filterStatus.value = status
 }
 
-/** 格式化时间显示，去掉秒 */
-function formatRange(b: Booking): string {
-  const s = b.startTime.slice(11, 16)
-  const e = b.endTime.slice(11, 16)
-  return `${b.startTime.slice(0, 10)} ${s}–${e}`
+/**
+ * 取消预约。
+ *
+ * 注意这里没有直接改状态，而是先调 getTransitionError 问一句"这个流转允许吗"。
+ * 这就是状态机在真实代码里的作用 —— 它不是一个画在图上的框，
+ * 而是一个每次修改状态前都要过的检查。
+ */
+function cancelBooking(id: string) {
+  const target = bookings.value.find((b) => b.id === id)
+  if (!target) return
+  if (getTransitionError(target.status, 'rejected')) return
+  target.status = 'rejected'
 }
 
 const statusOptions: { label: string; value: DeviceStatus | '' }[] = [
@@ -158,13 +161,12 @@ const statusOptions: { label: string; value: DeviceStatus | '' }[] = [
       <h2>{{ selectedDevice.name }} 的预约记录</h2>
 
       <div v-if="bookingsOfSelected.length > 0" class="timeline">
-        <div v-for="b in bookingsOfSelected" :key="b.id" class="tl-item">
-          <span class="badge" :class="'tag-' + BOOKING_STATUS_TAG[b.status]">
-            {{ BOOKING_STATUS_TEXT[b.status] }}
-          </span>
-          <span class="tl-time">{{ formatRange(b) }}</span>
-          <span class="tl-reason">{{ b.reason }}</span>
-        </div>
+        <BookingItem
+          v-for="b in bookingsOfSelected"
+          :key="b.id"
+          :booking="b"
+          @cancel="cancelBooking"
+        />
       </div>
       <p v-else class="empty">该设备暂无生效中的预约</p>
 
@@ -282,48 +284,10 @@ h3 {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
 }
-.badge {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-.tag-success {
-  background: #e8ffea;
-  color: #00b42a;
-}
-.tag-warning {
-  background: #fff3e8;
-  color: #ff7d00;
-}
-.tag-danger {
-  background: #ffece8;
-  color: #f53f3f;
-}
-.tag-info {
-  background: #f2f3f5;
-  color: #4e5969;
-}
 .timeline {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-.tl-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: #f7f8fa;
-  border-radius: 6px;
-  font-size: 13px;
-}
-.tl-time {
-  font-variant-numeric: tabular-nums;
-  color: #1f2329;
-}
-.tl-reason {
-  color: #86909c;
 }
 .empty {
   font-size: 13px;

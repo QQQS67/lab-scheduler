@@ -49,6 +49,13 @@ export function findConflicts(
   })
 }
 
+/** 格式化时间显示：2026-11-03 09:00–12:00（去掉秒） */
+export function formatRange(range: TimeRange): string {
+  const s = range.startTime.slice(11, 16)
+  const e = range.endTime.slice(11, 16)
+  return `${range.startTime.slice(0, 10)} ${s}–${e}`
+}
+
 /** 校验时间段本身是否合法（结束晚于开始，且不超过单日上限） */
 export function validateTimeRange(
   range: TimeRange,
